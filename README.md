@@ -12,3 +12,17 @@ Status:
 - [ ] API + Frontend
 
 Este repositório ainda está em desenvolvimento.
+
+📌 Decisões Técnicas (fase atual – módulo 1)
+
+Projeto iniciado com Python por ser mais rápido para manipulação de dados.
+
+Organização do código feita em módulos (src/api_ans.py como primeiro módulo).
+
+Uso do requests + BeautifulSoup para parse de HTML na ANS.
+
+Uso de função auxiliar _get_soup() para tornar o código mais limpo e reutilizável.
+
+Primeira etapa finalizada: download dos últimos 3 trimestres.
+
+Documentações mais completas e trade-offs serão adicionados ao longo dos próximos módulos.
