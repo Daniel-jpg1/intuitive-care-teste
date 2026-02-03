@@ -1,101 +1,275 @@
-🚀 Intuitive Care – Teste Técnico (WIP)
+# 🚀 Intuitive Care – Teste Técnico (Processamento de Dados ANS)
 
-Repositório dedicado ao teste técnico da Intuitive Care, desenvolvido em Python.
-Atualmente em construção e evoluindo por módulos.
+Repositório desenvolvido para o **Teste de Entrada para Estagiários v2.0** da Intuitive Care.
 
-📦 Módulo 1 — Integração com API de Dados Abertos da ANS
+O foco desta entrega é a **parte de dados**, cobrindo integralmente os *Testes 1 e 2* do PDF:  
+- Integração com os dados públicos da ANS  
+- Processamento de arquivos ZIP  
+- Normalização  
+- Consolidação  
+- Validação  
+- Enriquecimento  
+- Agregação  
+- Tratamento de inconsistências  
+- Documentação de decisões técnicas (*trade-offs*)  
 
-✔️ Status do Progresso
+---
 
-| Etapa                                            | Status |
-| ------------------------------------------------ | ------ |
-| Listar anos disponíveis                          | ✅      |
-| Identificar e coletar arquivos ZIP por trimestre | ✅      |
-| Baixar os últimos 3 trimestres disponíveis       | ✅      |
-| Extrair arquivos                                 | ✅      |
-| Normalizar dados                                 | ✅      |
-| Consolidação e enriquecimento                    | ⏳      |
-| API + Frontend                                   | ⏳      |
+# 🎯 Objetivo Geral
 
-🧠 Decisões Técnicas (fase atual)
+Automatizar o pipeline completo de dados exigido pelo teste:
 
-As decisões abaixo refletem somente o módulo 1 e o início do processamento de arquivos, concluídos até agora:
+1. Localizar, baixar e extrair os arquivos de Demonstrações Contábeis dos **últimos 3 trimestres** disponíveis na ANS  
+2. Processar arquivos em formatos variados: `.csv`, `.txt`, `.xls`, `.xlsx`  
+3. Identificar automaticamente os arquivos contendo **Despesas com Eventos/Sinistros**  
+4. Normalizar colunas e padronizar nomes  
+5. Consolidar os dados em um único CSV  
+6. Validar CNPJ, valores e razão social  
+7. Enriquecer o consolidado com o cadastro oficial de operadoras  
+8. Agregar despesas por Operadora/UF (total, média, desvio padrão)  
+9. Gerar ZIPs finais conforme pedido no PDF  
 
-🔹 Linguagem escolhida
+---
 
-Python, pela rapidez no desenvolvimento e pela facilidade para lidar com dados (pandas, requests, BS4).
+# 🧱 Arquitetura do Projeto
 
-🔹 Arquitetura inicial
+```
+src/
+ ├── api_ans.py         # Descobre anos/trimestres + baixa os ZIPs
+ ├── file_processing.py # Extrai ZIPs + identifica arquivos + normaliza + consolida
+ ├── validation.py      # Valida CNPJ, valores e campos obrigatórios
+ ├── enrichment.py      # Join com cadastro de operadoras da ANS
+ ├── aggregation.py     # Agregação por RazaoSocial + UF
+ └── main.py            # Pipeline principal
 
-Código organizado em módulos dentro de src/, começando por:
+data/
+ ├── raw/               # ZIPs brutos baixados
+ ├── processed/         # Arquivos extraídos e normalizados
+ └── final/             # Arquivos finais (ZIP + CSV)
+```
 
-src/  
- ├── api_ans.py         # Acesso, listagem e download de arquivos da ANS  
- └── file_processing.py # Extração, leitura e normalização dos arquivos de demonstrações contábeis
+---
 
-🔹 Bibliotecas utilizadas
+# 🧩 Mapeamento para o PDF do teste
 
-• requests → para fazer requisições HTTP  
-• BeautifulSoup → para parsear o HTML da estrutura da ANS  
-• pathlib → para manipulação limpa de caminhos  
-• re (regex) → para identificar arquivos por trimestre  
-• pandas → para leitura e manipulação de dados tabulares  
+## ✅ **1. Integração com a API pública (ANS)**  
+Arquivo: `api_ans.py`
 
-🔹 Estratégia de busca
+Implementado:
 
-• Scraping simples na pasta principal da ANS (padrão FTP em HTML).  
-• Identificação automática dos anos disponíveis.  
-• Seleção dos 3 trimestres mais recentes, independente do formato dos arquivos (ex: 1T2025.zip, 2025_1_trimestre.zip, 2-tri.zip).  
+- Scraping simples na estrutura HTML (padrão FTP da ANS)
+- Descoberta dinâmica dos anos disponíveis
+- Identificação robusta de trimestres com *nomenclaturas variáveis*:
+  - `2009_1_trimestre.zip`
+  - `1T2024.zip`
+  - `2022-2-tri.zip`
+  - `3_t_2015.zip`
+- Ordenação e seleção dos **últimos 3 trimestres reais**
+- Download automático dos arquivos ZIP para `data/raw/`
 
-🔹 Funções auxiliares
+**Problemas reais resolvidos:**
+- Estruturas antigas inconsistentes
+- Trimestres com múltiplos arquivos diferentes
+- Pastas sem padrão uniforme
 
-Criação da função _get_soup() para:
+---
 
-• Reutilizar o código de requisição + parse  
-• Centralizar erros  
-• Deixar outros métodos mais limpos  
+## ✅ **1.2 Processamento e Normalização**  
+Arquivo: `file_processing.py`
 
-📦 Módulo 2 — Processamento interno dos arquivos (iniciado)
+Responsável por:
 
-Arquivo principal: src/file_processing.py
+- Extrair todos os ZIPs
+- Encontrar apenas arquivos com **Despesas com Eventos/Sinistros**
+- Ler arquivos independentemente de:
+  - encoding: `utf-8` / `latin1`
+  - separador: `;` ou `,`
+  - formato: csv / txt / xls / xlsx
 
-Funcionalidades já implementadas:
+### 🔧 Normalização de Colunas  
+Foi implementada a função `_normalizar_colunas`, que:
 
-• Extração dos arquivos .zip baixados para a pasta data/processed/  
-• Identificação inicial dos arquivos relevantes (CSV/TXT/XLS/XLSX)  
-• Leitura robusta dos arquivos, testando automaticamente combinações de encoding (utf-8 / latin1) e separador (; / ,)  
-• Normalização dos nomes de colunas (minúsculo, sem acentos, com padrão único)  
-• Extração de Ano e Trimestre a partir do nome dos arquivos  
-• Geração de um consolidado inicial com as colunas:
-  - RegistroANS  
-  - Ano  
-  - Trimestre  
-  - ValorDespesas  
+- remove acentos  
+- remove aspas  
+- remove caracteres estranhos  
+- coloca tudo em minúsculo  
+- troca espaços por `_`  
+- padroniza para `snake_case`  
 
-• Criação automática dos arquivos:
-  - consolidado_despesas.csv  
-  - consolidado_despesas.zip  
+Isso resolve diferenças como:
 
-📥 Progresso Atual
+- `"Valor Despesas"`  
+- `"VALOR_DESPESA "`  
+- `"Valor-Despesa"`  
 
-O pipeline já é capaz de:
+todas virando:
 
-✔ Buscar a pasta correta na ANS  
-✔ Listar os anos existentes  
-✔ Identificar zips por trimestre mesmo com nomes diferentes  
-✔ Ordenar e selecionar os últimos 3  
-✔ Fazer download automático dos arquivos ZIP  
-✔ Extrair e ler os arquivos de demonstrações contábeis em vários formatos  
-✔ Normalizar colunas e gerar um consolidado inicial de despesas por RegistroANS/Ano/Trimestre  
+```
+valor_despesas
+```
 
-🛠 Próximos Passos
+---
 
-• Enriquecer o consolidado com o cadastro de operadoras (CNPJ, Razão Social, UF, Modalidade)  
-• Implementar validações de dados (CNPJ, valores positivos, razão social não vazia)  
-• Agregar despesas por Razão Social e UF  
-• Integrar tudo no main.py e seguir para a parte de SQL, API e Frontend  
+## 🔎 **Inconsistências encontradas e tratamento (exigido no PDF)**
 
-📄 Observações
+### **1) CNPJs duplicados com razões sociais diferentes**
+- Solução: manter a versão mais recente (cadastro atual)  
+- Justificativa: RegistroANS é chave estável → CNPJ pode variar historicamente
 
-Este repositório está sendo montado progressivamente.
-Os commits refletem a evolução do raciocínio e construção da solução.
+### **2) Valores zerados ou negativos**
+- Negativos → descartados  
+- Zeros → mantidos (podem ser casos reais)
+
+### **3) Trimestres e datas inconsistentes**
+- Regex padroniza tudo para formato:
+```
+ano = YYYY
+trimestre = 1 | 2 | 3 | 4
+```
+
+### **4) Arquivos antigos sem colunas mínimas**
+- Esses arquivos eram irrelevantes para o teste  
+- Solução: ignorar de forma controlada + log
+
+### **5) Tipos de coluna variando (int/str)**
+- Solução: normalização completa via `astype(str).str.strip()`
+
+---
+
+## ✅ **1.3 Consolidação**
+Consolidado inicial contém:
+
+- `registroans`  
+- `ano`  
+- `trimestre`  
+- `valor_despesas`  
+
+Gerado em:
+
+```
+data/processed/consolidado_despesas.csv
+data/final/consolidado_despesas.zip
+```
+
+---
+
+# ✅ **2. Transformação, Validação e Enriquecimento**
+
+## **2.1 Validação** — `validation.py`
+
+Inclui:
+
+- Validação completa de **CNPJ** (formato + dígitos verificadores)
+- Filtro de valores inválidos
+- Razão Social obrigatória
+- Remoção de registros claramente corrompidos
+
+### 🔧 Trade-off: o que fazer com CNPJs inválidos?
+
+Opção adotada:  
+**descartar os inválidos** para garantir um dataset limpo.
+
+Justificativa:
+
+- facilidade de análise  
+- reduz ruído  
+- mantém coerência estatística  
+
+---
+
+## **2.2 Enriquecimento (join com cadastro)** — `enrichment.py`
+
+Fonte:  
+`https://dadosabertos.ans.gov.br/FTP/PDA/operadoras_de_plano_de_saude_ativas/`
+
+Após normalização, junta com o consolidado trazendo:
+
+- `cnpj`
+- `razao_social`
+- `registroans`
+- `modalidade`
+- `uf`
+
+### Problemas tratados:
+
+- CNPJs repetidos no cadastro → seleciona registro mais recente  
+- Operadoras sem match → marcadas e/ou removidas conforme regra  
+- Tipos diferentes (`int vs str`) → normalização pré-merge
+
+---
+
+# ✅ **2.3 Agregação Estatística** — `aggregation.py`
+
+Agrupa por:
+
+```
+razao_social, uf
+```
+
+E calcula:
+
+- **total** de despesas  
+- **média** trimestral  
+- **desvio padrão** (detecta variações altas)
+
+Ordenado do maior para o menor.
+
+Gera:
+
+```
+data/final/despesas_agregadas.csv
+data/final/Teste_{meu_nome}.zip
+```
+
+---
+
+# 🔧 Trade-offs técnicos (exigidos pelo PDF)
+
+### **1) Processar tudo em memória vs incremental**
+Escolha: **em memória**
+
+Prós:
+- código mais simples
+- pandas é rápido para o volume esperado
+- depuração fácil
+
+Contras:
+- mais uso de RAM (mas irrelevante para os tamanhos atuais)
+
+---
+
+### **2) Chave de join: CNPJ vs RegistroANS**
+Escolha: **RegistroANS como chave primária**
+
+Prós:
+- estabilidade maior ao longo dos anos
+- evita problemas de substituição de CNPJ
+- operação consistente com demos contábeis
+
+---
+
+### **3) CNPJs inválidos**
+Escolha: **descartar**
+
+Prós:
+- dataset limpo e estável  
+- reduz anomalias artificiais  
+- evita erros acumulados nas agregações
+
+---
+
+### **4) Ordenação e agregação**
+Escolha: **ordenar em memória com pandas**
+
+Prós:
+- performance excelente para poucos milhares de registros  
+- simplicidade  
+- código direto e auditável  
+
+---
+
+# ✔ Conclusão
+
+O pipeline cobre integralmente os requisitos dos **Testes 1 e 2 do PDF**, com justificativas de escolhas técnicas e tratamento explícito de inconsistências.
+
+O código foi organizado em módulos independentes para garantir clareza, manutenibilidade e facilidade de avaliação.
