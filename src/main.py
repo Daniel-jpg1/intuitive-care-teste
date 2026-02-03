@@ -11,6 +11,7 @@ from file_processing import (
 )
 from enrichment import baixar_cadastro_operadoras, enriquecer_consolidado_com_cadastro
 from aggregation import agregar_despesas, gerar_zip_final
+from validation import validar_dados_consolidados
 
 
 def main() -> None:
@@ -68,10 +69,15 @@ def main() -> None:
         enriquecido_csv,
     )
 
-    # 8. Agregar despesas por RazaoSocial/UF (depende do seu aggregation.py)
+    # 7.5. Validar dados enriquecidos (CNPJ, RazaoSocial, ValorDespesas)
+    enriquecido_validado_csv = processed_dir / "consolidado_enriquecido_validado.csv"
+    print("Validando dados consolidados (CNPJ, RazaoSocial, ValorDespesas)...")
+    validar_dados_consolidados(enriquecido_csv, enriquecido_validado_csv)
+
+    # 8. Agregar despesas por RazaoSocial/UF usando o arquivo validado
     despesas_agregadas_csv = final_dir / "despesas_agregadas.csv"
     print("Gerando despesas agregadas...")
-    agregar_despesas(enriquecido_csv, despesas_agregadas_csv)
+    agregar_despesas(enriquecido_validado_csv, despesas_agregadas_csv)
 
     # 9. Gerar ZIP final
     zip_final = final_dir / "Teste_seu_nome.zip"
