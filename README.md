@@ -139,6 +139,7 @@ uvicorn src.api_app:app --reload
 #   http://127.0.0.1:8000/docs
 
 # 6) Subir o frontend (Vue + Vite) em OUTRO terminal
+# (rodar estes comandos dentro da pasta intuitive-care-teste)
 cd frontend
 npm install
 npm run dev
