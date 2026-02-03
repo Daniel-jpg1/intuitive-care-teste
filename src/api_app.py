@@ -14,13 +14,15 @@ DATA_DIR = BASE_DIR / "data"
 PROCESSED_DIR = DATA_DIR / "processed"
 FINAL_DIR = DATA_DIR / "final"
 
-CONSOLIDADO_ENRIQUECIDO_CSV = PROCESSED_DIR / "consolidado_enriquecido.csv"
+# Usamos o consolidado VALIDADO gerado pelo main.py
+CONSOLIDADO_ENRIQUECIDO_CSV = PROCESSED_DIR / "consolidado_enriquecido_validado.csv"
 DESPESAS_AGREGADAS_CSV = FINAL_DIR / "despesas_agregadas.csv"
 
 
 # -------------------------------------------------
 # Modelos de resposta (Pydantic)
 # -------------------------------------------------
+
 
 class OperadoraResumo(BaseModel):
     cnpj: str
@@ -62,6 +64,7 @@ class PaginatedResponse(BaseModel):
 # Inicialização do app
 # -------------------------------------------------
 
+
 app = FastAPI(
     title="Intuitive Care - Teste Técnico",
     description="API de leitura dos dados consolidados de operadoras e despesas.",
@@ -81,6 +84,7 @@ app.add_middleware(
 # -------------------------------------------------
 # Carregamento dos dados em memória
 # -------------------------------------------------
+
 
 df_enriquecido: Optional[pd.DataFrame] = None
 df_agregado: Optional[pd.DataFrame] = None
@@ -116,6 +120,7 @@ def on_startup() -> None:
 # -------------------------------------------------
 # Rotas
 # -------------------------------------------------
+
 
 @app.get("/api/operadoras", response_model=PaginatedResponse)
 def listar_operadoras(
