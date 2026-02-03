@@ -80,7 +80,7 @@ def main() -> None:
     agregar_despesas(enriquecido_validado_csv, despesas_agregadas_csv)
 
     # 9. Gerar ZIP final
-    zip_final = final_dir / "Teste_seu_nome.zip"
+    zip_final = final_dir / "Teste_Carlos_Daniel.zip"
     print("Gerando ZIP final do teste...")
     gerar_zip_final(final_dir, zip_final)
 

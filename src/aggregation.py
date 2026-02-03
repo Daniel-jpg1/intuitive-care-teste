@@ -37,7 +37,7 @@ def agregar_despesas(caminho_enriquecido: Path, caminho_saida: Path) -> None:
 
 
 def gerar_zip_final(final_dir: Path, zip_path: Path) -> None:
-    # Gera o ZIP final do teste, contendo pelo menos: - consolidado_despesas.zip - despesas_agregadas.csv Você pode adicionar outros artefatos depois, se quiser.
+    # Gera o ZIP final do teste, contendo pelo menos: - consolidado_despesas.zip - despesas_agregadas.csv
     zip_path.parent.mkdir(parents=True, exist_ok=True)
 
     arquivos_para_incluir: list[Path] = []
@@ -49,9 +49,6 @@ def gerar_zip_final(final_dir: Path, zip_path: Path) -> None:
     despesas_agregadas = final_dir / "despesas_agregadas.csv"
     if despesas_agregadas.exists():
         arquivos_para_incluir.append(despesas_agregadas)
-
-    # Se quiser incluir tudo da pasta final, pode trocar a lógica acima por um glob:
-    # arquivos_para_incluir = [p for p in final_dir.glob("*") if p.is_file()]
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for caminho in arquivos_para_incluir:
